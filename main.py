@@ -35,11 +35,30 @@ class Livro(BaseModel):
     ano_publicacao: int
 
 @app.get('/livros')
-def get_livros(credentials: HTTPBasicCredentials = Depends(autentica_usuario)):
+def get_livros(page: int = 1, limit: int = 10, credentials: HTTPBasicCredentials = Depends(autentica_usuario)):
+    if page < 1 or limit < 1:
+        raise HTTPException(status_code=400, detail='A pagina e o limite de livros por página devem ser maiores que zero.')
     if not meus_livros:
         raise HTTPException(status_code=404, detail="Nenhum livro encontrado.")
-    else:
-        return meus_livros
+    
+    livros_ordenados = sorted(meus_livros.items(), key= lambda x: x[0])
+    
+    start = (page - 1) * limit
+    end = start + limit
+    livros_paginados = [
+        {"id": id_livro, "titulo": livro_data['titulo'], "autor": livro_data["autor"], "ano_publicacao": livro_data['ano_publicacao']}
+        for id_livro, livro_data in livros_ordenados[start:end]
+    ]
+    
+    
+    return {
+        "page" : page,
+        "limit": limit,
+        "total_livros" : len(meus_livros),
+        "livros": livros_paginados
+    }
+    
+    
 @app.post('/adiciona/{id_livro}')
 def adiciona_livro(id_livro: int, livro: Livro, credentials: HTTPBasicCredentials = Depends(autentica_usuario)):
     if id_livro in meus_livros:

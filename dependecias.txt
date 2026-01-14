@@ -1,3 +1,5 @@
 # poetry
 # fastaapi
 # python 
+
+para iniciar terminal - # poetry run fastapi dev *tarefa2*.py
