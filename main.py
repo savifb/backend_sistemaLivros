@@ -1,11 +1,25 @@
 # SISTEMA LIVROS 
 
+# IMPORTAÇÕES FASTAPI E OUTRAS BIBLIOTECAS
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
 from typing import Optional
 import os 
 import secrets 
+
+# IMPORTAÇÕES PARA O BANCO DE DADOS 
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+DATABASE_URL = "sqlite:///./livros.db"
+
+engine= create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+
+sessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+base = declarative_base()
 
 app = FastAPI()
 
@@ -29,10 +43,27 @@ def autentica_usuario(credentials: HTTPBasicCredentials = Depends(security)):
 
 
 
+class Livro(base):
+    __tablename__ = 'Livros'
+    id = Column(Integer, primary_key=True, index=True)
+    titulo = Column(String, index=True)
+    autor = Column(String, index=True)
+    ano_publicacao = Column(Integer, index=True)
+
+base.metadata.create_all(bind=engine)
+
 class Livro(BaseModel):
     titulo: str
     autor: str
     ano_publicacao: int
+
+def sessao_db():
+    db = sessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+        
 
 @app.get('/livros')
 def get_livros(page: int = 1, limit: int = 10, credentials: HTTPBasicCredentials = Depends(autentica_usuario)):
