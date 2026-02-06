@@ -1,7 +1,7 @@
 [project]
-name = "backend"
-version = "0.1.0"
-description = "Curso Backend Parte da Api FAST"
+name = "virtualback"
+version = "0.1.1"
+description = "Sistema de Gerenciamento de Livros"
 authors = [
     {name = "savifb",email = "savio.sousa@estudante.ifb.edu.br"}
 ]
@@ -15,7 +15,6 @@ dependencies = [
     "unicorn (>=2.1.4,<3.0.0)",
     "aiosqlite (>=0.22.1,<0.23.0)"
 ]
-
 
 [tool.poetry]
 package-mode = false
