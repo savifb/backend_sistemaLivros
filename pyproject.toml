@@ -13,7 +13,9 @@ dependencies = [
     "psycopg2-binary (>=2.9.11,<3.0.0)",
     "python-dotenv (>=1.2.1,<2.0.0)",
     "unicorn (>=2.1.4,<3.0.0)",
-    "aiosqlite (>=0.22.1,<0.23.0)"
+    "aiosqlite (>=0.22.1,<0.23.0)",
+    "redis (>=7.1.1,<8.0.0)",
+    "fastapy (>=1.0.5,<2.0.0)"
 ]
 
 [tool.poetry]

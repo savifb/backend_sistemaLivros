@@ -3,7 +3,7 @@ version: "3.8"
 services:
   app:
     build: .
-    container_name: livros-api
+    container_name: container_app_fastapi
     ports: 
       - "8001:8000"
     volumes:
@@ -11,3 +11,27 @@ services:
     env_file:
       - .env
     command: ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+    
+    deploy:
+      replicas: 5
+      restart_policy:
+        condition: on-failure
+  redis:
+    image: redis:latest
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10S
+      timeout: 5S
+      retries: 5
+
+
+    deploy:
+      replicas: 5
+      restart_policy:
+        condition: on-failure

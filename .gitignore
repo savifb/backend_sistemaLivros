@@ -1,6 +1,5 @@
 # Ambiente / segredos
-.env
-.env.*
+
 
 # Virtualenv
 .venv/
