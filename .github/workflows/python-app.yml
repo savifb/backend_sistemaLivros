@@ -1,0 +1,93 @@
+name: FastAPI CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: fastapi-app
+  IMAGE_TAG: latest
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.local/share/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install --no-root --no-interaction
+
+      - name: Run tests
+        run: poetry run pytest --tb=short -v
+
+  docker-build:
+    name: Build & Verify Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
+            --file Dockerfile \
+            .
+
+      - name: Verify Docker image exists
+        run: docker image inspect ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+      # DATABASE_URL com SQLite em memória para o smoke test
+      - name: Smoke test — run container
+        run: |
+          docker run \
+            --detach \
+            --name fastapi-smoke-test \
+            --publish 8000:8000 \
+            --env DATABASE_URL="sqlite:///./test.db" \
+            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+          sleep 5
+
+          echo "=== Container Logs ==="
+          docker logs fastapi-smoke-test || true
+
+          if ! docker ps --filter "name=fastapi-smoke-test" --filter "status=running" | grep -q fastapi-smoke-test; then
+            echo "❌ Container crashed on startup. See logs above."
+            exit 1
+          fi
+
+          echo "✅ Container is running successfully."
+          docker stop fastapi-smoke-test
+          docker rm fastapi-smoke-test
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: docker logs fastapi-smoke-test 2>/dev/null || echo "Container already removed or never started."
