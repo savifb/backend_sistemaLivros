@@ -1,5 +1,19 @@
-# tasks.py
-# Importa as tarefas do celery_app para manter compatibilidade com os imports do main.py
-from celery_app import somar, fatorial
+from celery_app import app 
+import time
 
-__all__ = ['somar', 'fatorial']
+import celery_app
+
+@celery_app.task(name='somar', bind=True)
+def somar(self, a, b):
+    return a+b
+
+@celery_app.task(name='fatorial', bind=True)
+def fatorial(self, n):
+    if n < 0:
+        raise ValueError("Fatorial não é definido para números negativos.")
+    
+    resultado = 1
+    for i in range(2, n + 1):
+        resultado *= i
+    return resultado
+
